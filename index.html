@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Catraca RFID - Simulação de Clonagem</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #2a5298;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .user-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .user-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .user-item.active {
+            background-color: #e6f0ff;
+            border-left: 4px solid #2a5298;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .user-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .user-balance {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #2a5298;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3c72;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .rfid-reader {
+            background-color: #2a5298;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .rfid-reader:hover {
+            background-color: #1e3c72;
+            transform: scale(1.02);
+        }
+
+        .rfid-reader.scanning {
+            animation: pulse 1.5s infinite;
+        }
+
+        .clone-simulation {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clone-simulation:hover {
+            background-color: #ffeaa7;
+            transform: scale(1.02);
+        }
+
+        .clone-simulation.scanning {
+            animation: pulse-warning 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { background-color: #2a5298; }
+            50% { background-color: #3a62a8; }
+            100% { background-color: #2a5298; }
+        }
+
+        @keyframes pulse-warning {
+            0% { background-color: #fff3cd; }
+            50% { background-color: #ffeaa7; }
+            100% { background-color: #fff3cd; }
+        }
+
+        .logs {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .log-time {
+            color: #6c757d;
+            font-weight: bold;
+        }
+
+        .log-success {
+            color: #28a745;
+        }
+
+        .log-warning {
+            color: #ffc107;
+        }
+
+        .log-error {
+            color: #dc3545;
+        }
+
+        .map-container {
+            height: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .pin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pin-modal.active {
+            display: flex;
+        }
+
+        .pin-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .pinpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .pinpad-btn {
+            padding: 15px;
+            font-size: 1.2rem;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pinpad-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .pin-display {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .pin-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #ddd;
+            transition: background-color 0.2s;
+        }
+
+        .pin-dot.filled {
+            background-color: #2a5298;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background-color: #28a745;
+        }
+
+        .status-blocked {
+            background-color: #dc3545;
+        }
+
+        .status-warning {
+            background-color: #ffc107;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .json-editor {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            height: 200px;
+            width: 100%;
+            resize: vertical;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid #2a5298;
+            font-weight: bold;
+            color: #2a5298;
+        }
+
+        .clone-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .distance-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .action-btn {
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            border-radius: 3px;
+        }
+
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .point-btn {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .point-btn:hover {
+            background-color: #e9ecef;
+            border-color: #2a5298;
+        }
+
+        .point-btn.active {
+            background-color: #2a5298;
+            color: white;
+            border-color: #1e3c72;
+        }
+
+        .time-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .time-input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .time-suggestion {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .time-suggestion button {
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        .distance-display {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .usage-history {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .debug-info {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .clone-badge {
+            background-color: #ffc107;
+            color: #856404;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .simulation-mode {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background-color: #2a5298;
+            color: white;
+            border-color: #1e3c72;
+        }
+
+        .mode-btn.clone-mode {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .mode-btn.clone-mode.active {
+            background-color: #ffc107;
+            color: #212529;
+            border-color: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sistema de Catraca RFID - Simulação de Clonagem</h1>
+            <p class="subtitle">Sistema com simulação rápida de uso com cartão clonado</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- Painel de Usuários -->
+            <div class="card">
+                <h2>Usuários do Sistema</h2>
+                <div class="user-list" id="userList">
+                    <!-- Usuários serão carregados aqui -->
+                </div>
+            </div>
+
+            <!-- Painel de Controle -->
+            <div class="card">
+                <h2>Controles de Simulação</h2>
+                <div class="controls">
+                    <div class="input-group">
+                        <label for="selectedUser">Usuário/Cartão Selecionado:</label>
+                        <select id="selectedUser">
+                            <option value="">Selecione um usuário</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <button id="btnCloneCard" class="btn-secondary">Criar Clone Permanente</button>
+                        <button id="btnResetCard" class="btn-secondary">Resetar Histórico</button>
+                        <button id="btnAddBalance" class="btn-success">Adicionar Saldo</button>
+                    </div>
+
+                    <div class="simulation-mode">
+                        <button class="mode-btn active" data-mode="normal">Modo Normal</button>
+                        <button class="mode-btn clone-mode" data-mode="clone">Modo Clonagem</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Selecionar Ponto de Parada:</label>
+                        <div class="points-grid" id="pointsGrid">
+                            <!-- Pontos serão carregados aqui -->
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="timeBetweenUses">Tempo desde último uso (minutos):</label>
+                        <div class="time-controls">
+                            <input type="number" id="timeBetweenUses" class="time-input" min="0" max="120" value="5">
+                            <button id="btnSetTime" class="btn-primary">Definir Tempo</button>
+                        </div>
+                        <div class="time-suggestion" id="timeSuggestion">
+                            <!-- Sugestão de tempo será exibida aqui -->
+                        </div>
+                        <div class="distance-display" id="distanceDisplay" style="display: none;">
+                            <!-- Distância será exibida aqui -->
+                        </div>
+                    </div>
+
+                    <div class="usage-history" id="usageHistory" style="display: none;">
+                        <strong>Histórico de Uso:</strong>
+                        <div id="historyList">
+                            <!-- Histórico será exibido aqui -->
+                        </div>
+                    </div>
+
+                    <div class="debug-info" id="debugInfo" style="display: none;">
+                        <strong>Informações de Debug:</strong>
+                        <div id="debugDetails"></div>
+                    </div>
+
+                    <div class="clone-info" id="cloneInfo" style="display: none;">
+                        <strong>Modo Clonagem Ativo:</strong> 
+                        <span id="cloneDetails">Simulando uso com cartão clonado (mesmo UID)</span>
+                    </div>
+
+                    <div class="simulation-area">
+                        <div class="rfid-reader" id="rfidReader">
+                            🚌 USO NORMAL - APROXIME O CARTÃO 🚌
+                        </div>
+                        <div class="clone-simulation" id="cloneSimulation" style="display: none;">
+                            ⚠️ SIMULAR USO COM CARTAÃO CLONADO ⚠️
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning" id="securityAlert" style="display: none;">
+                        <strong>Alerta de Segurança:</strong> Uso suspeito detectado! Verificação de PIN necessária.
+                    </div>
+
+                    <div class="logs" id="accessLogs">
+                        <div class="log-entry">
+                            <span class="log-time">[10:15:32]</span> 
+                            <span class="log-success">Sistema inicializado. Aguardando leituras...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de Mapa -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Mapa de Pontos de Parada</h2>
+                <div class="map-container" id="map"></div>
+            </div>
+
+            <!-- Painel de Status e JSON -->
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" data-tab="status">Status do Sistema</div>
+                    <div class="tab" data-tab="json">Editor JSON</div>
+                </div>
+                
+                <div id="statusTab">
+                    <div id="systemStatus">
+                        <p><span class="status-indicator status-active"></span> Sistema Operacional</p>
+                        <p><span class="status-indicator status-active"></span> Detecção de Uso Suspeito Ativa</p>
+                        <p><span class="status-indicator status-active"></span> Simulação de Clonagem Disponível</p>
+                    </div>
+                    <div class="control-group" style="margin-top: 20px;">
+                        <button id="btnRefreshData" class="btn-primary">Atualizar Dados</button>
+                        <button id="btnClearLogs" class="btn-secondary">Limpar Logs</button>
+                        <button id="btnExportJSON" class="btn-success">Exportar JSON</button>
+                    </div>
+                </div>
+                
+                <div id="jsonTab" style="display: none;">
+                    <div class="input-group">
+                        <label for="jsonData">Dados do Sistema (JSON):</label>
+                        <textarea id="jsonData" class="json-editor"></textarea>
+                    </div>
+                    <div class="control-group">
+                        <button id="btnLoadJSON" class="btn-primary">Carregar JSON</button>
+                        <button id="btnResetJSON" class="btn-secondary">Resetar Dados</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de Estatísticas -->
+            <div class="card">
+                <h2>Estatísticas de Uso</h2>
+                <div id="usageStats">
+                    <p>Total de Usuários: <strong id="totalUsers">0</strong></p>
+                    <p>Viagens Hoje: <strong id="tripsToday">0</strong></p>
+                    <p>Alertas de Segurança: <strong id="securityAlerts">0</strong></p>
+                    <p>Cartões Bloqueados: <strong id="blockedCards">0</strong></p>
+                    <p>Simulações de Clonagem: <strong id="cloneSimulations">0</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para entrada de PIN -->
+    <div class="pin-modal" id="pinModal">
+        <div class="pin-content">
+            <h2>Verificação de Segurança</h2>
+            <p id="pinMessage">Uso suspeito detectado. Por favor, insira seu PIN de 4 dígitos:</p>
+            
+            <div class="pin-display">
+                <div class="pin-dot" id="pinDot1"></div>
+                <div class="pin-dot" id="pinDot2"></div>
+                <div class="pin-dot" id="pinDot3"></div>
+                <div class="pin-dot" id="pinDot4"></div>
+            </div>
+            
+            <div class="pinpad">
+                <button class="pinpad-btn" data-digit="1">1</button>
+                <button class="pinpad-btn" data-digit="2">2</button>
+                <button class="pinpad-btn" data-digit="3">3</button>
+                <button class="pinpad-btn" data-digit="4">4</button>
+                <button class="pinpad-btn" data-digit="5">5</button>
+                <button class="pinpad-btn" data-digit="6">6</button>
+                <button class="pinpad-btn" data-digit="7">7</button>
+                <button class="pinpad-btn" data-digit="8">8</button>
+                <button class="pinpad-btn" data-digit="9">9</button>
+                <button class="pinpad-btn" id="btnClearPin">C</button>
+                <button class="pinpad-btn" data-digit="0">0</button>
+                <button class="pinpad-btn" id="btnBackspace">⌫</button>
+            </div>
+            
+            <div class="control-group">
+                <button id="btnSubmitPin" class="btn-primary">Verificar</button>
+                <button id="btnCancelPin" class="btn-secondary">Cancelar</button>
+            </div>
+            <p id="pinError" style="color: #dc3545; margin-top: 10px; display: none;">PIN incorreto. Tente novamente.</p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Dados iniciais em JSON
+        const initialData = {
+            "users": [
+                { 
+                    "id": 1, 
+                    "name": "João Silva", 
+                    "uid": "A1B2C3D4", 
+                    "pin": "1234", 
+                    "balance": 25.50, 
+                    "status": "active", 
+                    "lastUse": null, 
+                    "lastLocation": null,
+                    "cardType": "normal",
+                    "usageHistory": []
+                },
+                { 
+                    "id": 2, 
+                    "name": "Maria Oliveira", 
+                    "uid": "E5F6G7H8", 
+                    "pin": "5678", 
+                    "balance": 12.75, 
+                    "status": "active", 
+                    "lastUse": null, 
+                    "lastLocation": null,
+                    "cardType": "student",
+                    "usageHistory": []
+                },
+                { 
+                    "id": 3, 
+                    "name": "Carlos Santos", 
+                    "uid": "I9J0K1L2", 
+                    "pin": "9012", 
+                    "balance": 8.20, 
+                    "status": "active", 
+                    "lastUse": null, 
+                    "lastLocation": null,
+                    "cardType": "normal",
+                    "usageHistory": []
+                },
+                { 
+                    "id": 4, 
+                    "name": "Ana Costa", 
+                    "uid": "M3N4O5P6", 
+                    "pin": "3456", 
+                    "balance": 32.10, 
+                    "status": "active", 
+                    "lastUse": null, 
+                    "lastLocation": null,
+                    "cardType": "elderly",
+                    "usageHistory": []
+                },
+                { 
+                    "id": 5, 
+                    "name": "Pedro Almeida", 
+                    "uid": "Q7R8S9T0", 
+                    "pin": "7890", 
+                    "balance": 5.50, 
+                    "status": "blocked", 
+                    "lastUse": null, 
+                    "lastLocation": null,
+                    "cardType": "normal",
+                    "usageHistory": []
+                }
+            ],
+            "locations": [
+                { "id": "ponto_centro", "name": "Centro", "coords": [-23.5505, -46.6333], "type": "ponto" },
+                { "id": "ponto_sul", "name": "Ponto Sul", "coords": [-23.5600, -46.6400], "type": "ponto" },
+                { "id": "ponto_norte", "name": "Ponto Norte", "coords": [-23.5400, -46.6200], "type": "ponto" },
+                { "id": "ponto_leste", "name": "Ponto Leste", "coords": [-23.5450, -46.6100], "type": "ponto" },
+                { "id": "ponto_oeste", "name": "Ponto Oeste", "coords": [-23.5550, -46.6500], "type": "ponto" },
+                { "id": "estacao_central", "name": "Estação Central", "coords": [-23.5489, -46.6388], "type": "estacao" },
+                { "id": "estacao_sul", "name": "Estação Sul", "coords": [-23.5650, -46.6450], "type": "estacao" },
+                { "id": "terminal_aeroporto", "name": "Terminal Aeroporto", "coords": [-23.4356, -46.4731], "type": "terminal" },
+                { "id": "shopping_center", "name": "Shopping Center", "coords": [-23.5350, -46.6550], "type": "ponto" },
+                { "id": "universidade", "name": "Universidade", "coords": [-23.5580, -46.7300], "type": "ponto" }
+            ],
+            "settings": {
+                "fare": 4.50,
+                "studentFare": 2.25,
+                "elderlyFare": 0.00,
+                "suspiciousTimeThreshold": 10,
+                "maxDailyTrips": 10,
+                "apiKey": "rfid-transport-system-2024"
+            },
+            "clonedCards": [],
+            "accessLogs": [],
+            "systemStats": {
+                "totalTrips": 0,
+                "totalRevenue": 0,
+                "securityAlerts": 0,
+                "cloneSimulations": 0,
+                "lastUpdate": new Date().toISOString()
+            }
+        };
+
+        // Variáveis globais
+        let systemData = JSON.parse(JSON.stringify(initialData));
+        let selectedUser = null;
+        let clonedCard = null;
+        let accessLogs = [];
+        let map;
+        let markers = [];
+        let suspiciousUsers = ["Suspeito 1", "Suspeito 2", "Suspeito 3", "Suspeito 4", "Suspeito 5"];
+        let selectedPoint = null;
+        let currentPin = "";
+        let manualTimeBetweenUses = 5;
+        let simulationMode = "normal"; // "normal" ou "clone"
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            initializeMap();
+            setupEventListeners();
+            updateJSONEditor();
+        });
+
+        function initializeApp() {
+            renderUserList();
+            updateUserSelect();
+            updatePointsGrid();
+            updateStatistics();
+            updateCloneInfo();
+            updateUsageHistory();
+            updateSimulationMode();
+        }
+
+        function initializeMap() {
+            map = L.map('map').setView([-23.5505, -46.6333], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            systemData.locations.forEach(location => {
+                let iconColor = 'blue';
+                if (location.type === 'estacao') iconColor = 'red';
+                if (location.type === 'terminal') iconColor = 'orange';
+                
+                const marker = L.marker(location.coords, {
+                    icon: L.divIcon({
+                        className: 'custom-icon',
+                        html: `<div style="background-color: ${iconColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+                        iconSize: [16, 16],
+                        iconAnchor: [8, 8]
+                    })
+                }).addTo(map)
+                    .bindPopup(`<b>${location.name}</b><br>${location.type === 'ponto' ? 'Ponto de Ônibus' : location.type === 'estacao' ? 'Estação' : 'Terminal'}`);
+                markers.push(marker);
+            });
+        }
+
+        function setupEventListeners() {
+            // Leitores RFID
+            document.getElementById('rfidReader').addEventListener('click', simulateRFIDScan);
+            document.getElementById('cloneSimulation').addEventListener('click', simulateCloneUsage);
+
+            // Botões de controle
+            document.getElementById('btnCloneCard').addEventListener('click', cloneCard);
+            document.getElementById('btnResetCard').addEventListener('click', resetCard);
+            document.getElementById('btnAddBalance').addEventListener('click', addBalance);
+            document.getElementById('btnRefreshData').addEventListener('click', refreshData);
+            document.getElementById('btnClearLogs').addEventListener('click', clearLogs);
+            document.getElementById('btnExportJSON').addEventListener('click', exportJSON);
+            document.getElementById('btnSetTime').addEventListener('click', setManualTime);
+
+            // Modal de PIN
+            document.getElementById('btnSubmitPin').addEventListener('click', verifyPin);
+            document.getElementById('btnCancelPin').addEventListener('click', cancelPin);
+
+            // Modos de simulação
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    simulationMode = this.dataset.mode;
+                    updateSimulationMode();
+                });
+            });
+
+            // PIN Pad
+            document.querySelectorAll('.pinpad-btn[data-digit]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (currentPin.length < 4) {
+                        currentPin += this.dataset.digit;
+                        updatePinDisplay();
+                    }
+                });
+            });
+
+            document.getElementById('btnClearPin').addEventListener('click', function() {
+                currentPin = "";
+                updatePinDisplay();
+            });
+
+            document.getElementById('btnBackspace').addEventListener('click', function() {
+                currentPin = currentPin.slice(0, -1);
+                updatePinDisplay();
+            });
+
+            // JSON Editor
+            document.getElementById('btnLoadJSON').addEventListener('click', loadJSON);
+            document.getElementById('btnResetJSON').addEventListener('click', resetJSON);
+
+            // Tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.getElementById('statusTab').style.display = 'none';
+                    document.getElementById('jsonTab').style.display = 'none';
+                    
+                    document.getElementById(this.dataset.tab + 'Tab').style.display = 'block';
+                });
+            });
+
+            // Seleção de usuário
+            document.getElementById('selectedUser').addEventListener('change', function() {
+                const userId = this.value;
+                
+                if (userId && userId.startsWith('clone_')) {
+                    const cloneId = userId.split('_')[1];
+                    clonedCard = systemData.clonedCards.find(c => c.id == cloneId);
+                    selectedUser = null;
+                } else {
+                    selectedUser = systemData.users.find(user => user.id == userId) || null;
+                    clonedCard = null;
+                }
+                
+                if (selectedUser || clonedCard) {
+                    highlightSelectedUser(userId);
+                }
+                
+                updateCloneInfo();
+                updateUsageHistory();
+                updateDebugInfo();
+            });
+        }
+
+        function updateSimulationMode() {
+            const normalBtn = document.querySelector('.mode-btn[data-mode="normal"]');
+            const cloneBtn = document.querySelector('.mode-btn[data-mode="clone"]');
+            const rfidReader = document.getElementById('rfidReader');
+            const cloneSimulation = document.getElementById('cloneSimulation');
+            const cloneInfo = document.getElementById('cloneInfo');
+
+            // Atualiza botões
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            if (simulationMode === 'normal') {
+                normalBtn.classList.add('active');
+            } else {
+                cloneBtn.classList.add('active');
+            }
+
+            // Atualiza visibilidade dos leitores
+            if (simulationMode === 'normal') {
+                rfidReader.style.display = 'block';
+                cloneSimulation.style.display = 'none';
+                cloneInfo.style.display = 'none';
+            } else {
+                rfidReader.style.display = 'none';
+                cloneSimulation.style.display = 'block';
+                cloneInfo.style.display = 'block';
+            }
+        }
+
+        function updateDebugInfo() {
+            const userToCheck = selectedUser || clonedCard;
+            const debugInfo = document.getElementById('debugInfo');
+            const debugDetails = document.getElementById('debugDetails');
+            
+            if (userToCheck) {
+                debugInfo.style.display = 'block';
+                debugDetails.innerHTML = `
+                    <div>Usuário: ${userToCheck.name || userToCheck.userName}</div>
+                    <div>Modo: ${simulationMode === 'clone' ? 'CLONAGEM' : 'NORMAL'}</div>
+                    <div>Último uso: ${userToCheck.lastUse ? new Date(userToCheck.lastUse).toLocaleTimeString() : 'Nenhum'}</div>
+                    <div>Última localização: ${userToCheck.lastLocation || 'Nenhuma'}</div>
+                    <div>Tempo definido: ${manualTimeBetweenUses} minutos</div>
+                `;
+            } else {
+                debugInfo.style.display = 'none';
+            }
+        }
+
+        function updateUsageHistory() {
+            const userToCheck = selectedUser || clonedCard;
+            const usageHistory = document.getElementById('usageHistory');
+            const historyList = document.getElementById('historyList');
+            
+            if (userToCheck && userToCheck.usageHistory && userToCheck.usageHistory.length > 0) {
+                usageHistory.style.display = 'block';
+                historyList.innerHTML = '';
+                
+                const recentHistory = userToCheck.usageHistory.slice(-5).reverse();
+                
+                recentHistory.forEach(usage => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <span>${usage.location}</span>
+                        <span>${new Date(usage.timestamp).toLocaleTimeString()}</span>
+                    `;
+                    historyList.appendChild(historyItem);
+                });
+            } else {
+                usageHistory.style.display = 'none';
+            }
+        }
+
+        function updatePinDisplay() {
+            const dots = [
+                document.getElementById('pinDot1'),
+                document.getElementById('pinDot2'),
+                document.getElementById('pinDot3'),
+                document.getElementById('pinDot4')
+            ];
+            
+            dots.forEach((dot, index) => {
+                if (index < currentPin.length) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
+                }
+            });
+        }
+
+        function setManualTime() {
+            const timeInput = document.getElementById('timeBetweenUses');
+            const timeValue = parseInt(timeInput.value);
+            
+            if (isNaN(timeValue) || timeValue < 0) {
+                addLog('Por favor, insira um valor de tempo válido.', 'error');
+                return;
+            }
+            
+            manualTimeBetweenUses = timeValue;
+            addLog(`Tempo desde último uso definido para ${manualTimeBetweenUses} minutos.`, 'success');
+            updateDebugInfo();
+        }
+
+        function calculateAndDisplayDistance() {
+            const userToCheck = selectedUser || clonedCard;
+            if (!userToCheck || !userToCheck.lastLocation || !selectedPoint) return;
+            
+            const lastLocationData = systemData.locations.find(loc => loc.id === userToCheck.lastLocation);
+            const currentLocationData = systemData.locations.find(loc => loc.id === selectedPoint);
+            
+            if (lastLocationData && currentLocationData) {
+                const distance = calculateDistance(
+                    lastLocationData.coords[0], lastLocationData.coords[1],
+                    currentLocationData.coords[0], currentLocationData.coords[1]
+                );
+                
+                const distanceDisplay = document.getElementById('distanceDisplay');
+                distanceDisplay.innerHTML = `
+                    <strong>Distância do último uso:</strong> ${distance.toFixed(2)} km<br>
+                    <strong>Tempo mínimo realista:</strong> ${calculateRealisticTime(distance)} minutos
+                `;
+                distanceDisplay.style.display = 'block';
+                
+                updateTimeSuggestion(distance);
+            }
+        }
+
+        function calculateRealisticTime(distance) {
+            const urbanSpeed = 25;
+            const minTime = Math.max(Math.ceil((distance / urbanSpeed) * 60), 10);
+            return minTime;
+        }
+
+        function updateTimeSuggestion(distance) {
+            const realisticTime = calculateRealisticTime(distance);
+            const timeSuggestion = document.getElementById('timeSuggestion');
+            
+            let suggestionText = '';
+            if (manualTimeBetweenUses < realisticTime) {
+                suggestionText = `⚠️ TEMPO SUSPEITO! Para ${distance.toFixed(2)}km, o tempo mínimo realista é ${realisticTime} minutos. `;
+                suggestionText += `<button class="btn-primary" onclick="setRealisticTime(${realisticTime})">Usar ${realisticTime} min</button>`;
+            } else {
+                suggestionText = `✅ Tempo adequado para a distância de ${distance.toFixed(2)}km.`;
+            }
+            
+            timeSuggestion.innerHTML = suggestionText;
+        }
+
+        function setRealisticTime(time) {
+            document.getElementById('timeBetweenUses').value = time;
+            setManualTime();
+        }
+
+        function simulateRFIDScan() {
+            if (simulationMode !== 'normal') return;
+            
+            const userToScan = selectedUser || clonedCard;
+            
+            if (!userToScan) {
+                addLog('Selecione um usuário antes de simular a leitura.', 'error');
+                return;
+            }
+            
+            if (!selectedPoint) {
+                addLog('Selecione um ponto de parada antes de simular a leitura.', 'error');
+                return;
+            }
+
+            const reader = document.getElementById('rfidReader');
+            reader.classList.add('scanning');
+            
+            setTimeout(() => {
+                reader.classList.remove('scanning');
+                processRFIDAccess(userToScan, false);
+            }, 1500);
+        }
+
+        function simulateCloneUsage() {
+            if (simulationMode !== 'clone') return;
+            
+            const userToScan = selectedUser || clonedCard;
+            
+            if (!userToScan) {
+                addLog('Selecione um usuário antes de simular uso com clone.', 'error');
+                return;
+            }
+            
+            if (!selectedPoint) {
+                addLog('Selecione um ponto de parada antes de simular uso com clone.', 'error');
+                return;
+            }
+
+            const cloneReader = document.getElementById('cloneSimulation');
+            cloneReader.classList.add('scanning');
+            
+            setTimeout(() => {
+                cloneReader.classList.remove('scanning');
+                processRFIDAccess(userToScan, true);
+            }, 1500);
+        }
+
+        function processRFIDAccess(user, isCloneSimulation) {
+            const location = selectedPoint;
+            const locationData = systemData.locations.find(loc => loc.id === location);
+            const locationName = locationData ? locationData.name : "Local Desconhecido";
+            
+            if (user.status === 'blocked') {
+                addLog(`Acesso NEGADO para ${user.name || user.userName}. Cartão bloqueado.`, 'error');
+                return;
+            }
+
+            const fare = getFareForUser(user);
+            if (user.balance < fare) {
+                addLog(`Acesso NEGADO para ${user.name || user.userName}. Saldo insuficiente.`, 'error');
+                return;
+            }
+
+            const suspicious = checkSuspiciousUsage(user, location);
+            
+            if (suspicious) {
+                const simulationType = isCloneSimulation ? ' (SIMULAÇÃO CLONE)' : '';
+                addLog(`🚨 USO SUSPEITO DETECTADO para ${user.name || user.userName}${simulationType}! Verificação de PIN necessária.`, 'warning');
+                document.getElementById('securityAlert').style.display = 'block';
+                showPinModal(user, location, isCloneSimulation);
+            } else {
+                grantAccess(user, location, locationName, isCloneSimulation);
+            }
+        }
+
+        function getFareForUser(user) {
+            if (user.cardType === 'student') {
+                return systemData.settings.studentFare;
+            } else if (user.cardType === 'elderly') {
+                return systemData.settings.elderlyFare;
+            } else {
+                return systemData.settings.fare;
+            }
+        }
+
+        function checkSuspiciousUsage(user, currentLocation) {
+            if (!user.lastUse || !user.lastLocation) {
+                addLog(`Primeiro uso registrado para ${user.name || user.userName}.`, 'success');
+                return false;
+            }
+            
+            if (user.lastLocation === currentLocation) {
+                return false;
+            }
+            
+            const lastLocationData = systemData.locations.find(loc => loc.id === user.lastLocation);
+            const currentLocationData = systemData.locations.find(loc => loc.id === currentLocation);
+            
+            if (!lastLocationData || !currentLocationData) {
+                return false;
+            }
+            
+            const distance = calculateDistance(
+                lastLocationData.coords[0], lastLocationData.coords[1],
+                currentLocationData.coords[0], currentLocationData.coords[1]
+            );
+            
+            const realisticTime = calculateRealisticTime(distance);
+            
+            addLog(`DEBUG: Distância: ${distance.toFixed(2)}km, Tempo definido: ${manualTimeBetweenUses}min, Tempo realista: ${realisticTime}min`, 'warning');
+            
+            if (manualTimeBetweenUses < realisticTime) {
+                addLog(`🚨 ALERTA: Viagem de ${distance.toFixed(2)}km impossível em ${manualTimeBetweenUses} minutos!`, 'warning');
+                return true;
+            }
+            
+            return false;
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            return distance;
+        }
+
+        function grantAccess(user, location, locationName, isCloneSimulation) {
+            const fare = getFareForUser(user);
+            user.balance -= fare;
+            
+            const now = new Date();
+            user.lastUse = now.toISOString();
+            user.lastLocation = location;
+            
+            if (!user.usageHistory) user.usageHistory = [];
+            user.usageHistory.push({
+                location: locationName,
+                timestamp: now.toISOString(),
+                fare: fare,
+                isClone: isCloneSimulation
+            });
+            
+            if (user.usageHistory.length > 10) {
+                user.usageHistory = user.usageHistory.slice(-10);
+            }
+            
+            const simulationType = isCloneSimulation ? ' (SIMULAÇÃO CLONE)' : '';
+            addLog(`✅ Acesso PERMITIDO para ${user.name || user.userName}${simulationType} em ${locationName}. Tarifa: R$ ${fare.toFixed(2)} | Saldo: R$ ${user.balance.toFixed(2)}`, 'success');
+            
+            if (isCloneSimulation) {
+                systemData.systemStats.cloneSimulations++;
+                updateStatistics();
+            }
+            
+            renderUserList();
+            updateUserSelect();
+            updateStatistics();
+            updateCloneInfo();
+            updateUsageHistory();
+            updateDebugInfo();
+            
+            if (user.id) {
+                highlightSelectedUser(user.id);
+            } else if (user.uid) {
+                highlightSelectedUser(`clone_${user.id}`);
+            }
+            
+            updateJSONEditor();
+            
+            addMapMarker(user, location, isCloneSimulation);
+            
+            document.getElementById('distanceDisplay').style.display = 'none';
+            document.getElementById('timeSuggestion').innerHTML = '';
+        }
+
+        function addMapMarker(user, location, isCloneSimulation) {
+            const locationData = systemData.locations.find(loc => loc.id === location);
+            if (locationData) {
+                const simulationType = isCloneSimulation ? ' (SIMULAÇÃO CLONE)' : '';
+                const marker = L.marker(locationData.coords).addTo(map)
+                    .bindPopup(`<b>${user.name || user.userName}${simulationType}</b><br>Uso em ${new Date().toLocaleTimeString()}<br>Local: ${locationData.name}`);
+                
+                setTimeout(() => {
+                    map.removeLayer(marker);
+                }, 10000);
+            }
+        }
+
+        function showPinModal(user, location, isCloneSimulation) {
+            document.getElementById('pinModal').classList.add('active');
+            document.getElementById('pinError').style.display = 'none';
+            currentPin = "";
+            updatePinDisplay();
+            
+            const pinMessage = document.getElementById('pinMessage');
+            if (isCloneSimulation) {
+                pinMessage.textContent = "USO COM CARTAÃO CLONADO DETECTADO! Insira o PIN do cartão original:";
+            } else {
+                pinMessage.textContent = "Uso suspeito detectado! Distância impossível no tempo informado. Insira seu PIN:";
+            }
+            
+            document.getElementById('pinModal').dataset.userId = user.id || user.uid;
+            document.getElementById('pinModal').dataset.location = location;
+            document.getElementById('pinModal').dataset.isClone = isCloneSimulation;
+        }
+
+        function verifyPin() {
+            const userId = document.getElementById('pinModal').dataset.userId;
+            const location = document.getElementById('pinModal').dataset.location;
+            const isCloneSimulation = document.getElementById('pinModal').dataset.isClone === 'true';
+            const locationData = systemData.locations.find(loc => loc.id === location);
+            const locationName = locationData ? locationData.name : "Local Desconhecido";
+            
+            let originalUser;
+            if (clonedCard) {
+                originalUser = systemData.users.find(u => u.uid === clonedCard.originalUid);
+            } else {
+                originalUser = systemData.users.find(u => u.id == userId || u.uid === userId);
+            }
+            
+            if (originalUser && currentPin === originalUser.pin) {
+                document.getElementById('pinModal').classList.remove('active');
+                document.getElementById('securityAlert').style.display = 'none';
+                
+                const simulationType = isCloneSimulation ? ' (SIMULAÇÃO CLONE)' : '';
+                addLog(`✅ PIN verificado com sucesso para ${originalUser.name}${simulationType}.`, 'success');
+                
+                grantAccess(originalUser, location, locationName, isCloneSimulation);
+            } else {
+                document.getElementById('pinError').style.display = 'block';
+                addLog(`❌ Falha na verificação de PIN.`, 'error');
+                
+                currentPin = "";
+                updatePinDisplay();
+            }
+        }
+
+        function cancelPin() {
+            document.getElementById('pinModal').classList.remove('active');
+            document.getElementById('securityAlert').style.display = 'none';
+            addLog('Verificação de PIN cancelada. Acesso negado.', 'warning');
+        }
+
+        // ... (outras funções permanecem iguais: cloneCard, resetCard, addBalance, etc.)
+
+        function cloneCard() {
+            if (!selectedUser) {
+                addLog('Selecione um usuário para clonar o cartão.', 'error');
+                return;
+            }
+            
+            const randomSuspect = suspiciousUsers[Math.floor(Math.random() * suspiciousUsers.length)];
+            
+            const clonedCardId = systemData.clonedCards.length + 1;
+            const clonedCard = {
+                id: clonedCardId,
+                originalUid: selectedUser.uid,
+                uid: selectedUser.uid + '_CLONE_' + clonedCardId,
+                userName: randomSuspect,
+                pin: selectedUser.pin,
+                balance: selectedUser.balance,
+                status: "active",
+                lastUse: selectedUser.lastUse,
+                lastLocation: selectedUser.lastLocation,
+                cardType: selectedUser.cardType,
+                failedPinAttempts: 0,
+                usageHistory: selectedUser.usageHistory ? [...selectedUser.usageHistory] : []
+            };
+            
+            systemData.clonedCards.push(clonedCard);
+            
+            addLog(`⚠️ Cartão de ${selectedUser.name} clonado. UID clonado: ${clonedCard.uid} usado por ${randomSuspect}`, 'warning');
+            addLog(`📋 Clone permanente criado com mesmo PIN, saldo e histórico do original.`, 'success');
+            
+            renderUserList();
+            updateUserSelect();
+            updateStatistics();
+            updateJSONEditor();
+        }
+
+        function resetCard() {
+            if (!selectedUser && !clonedCard) {
+                addLog('Selecione um usuário ou cartão clonado para resetar.', 'error');
+                return;
+            }
+            
+            const userToReset = clonedCard || selectedUser;
+            
+            userToReset.lastUse = null;
+            userToReset.lastLocation = null;
+            userToReset.usageHistory = [];
+            
+            addLog(`Histórico de uso resetado para ${userToReset.name || userToReset.userName}.`, 'success');
+            renderUserList();
+            updateJSONEditor();
+            updateUsageHistory();
+            updateDebugInfo();
+            
+            document.getElementById('distanceDisplay').style.display = 'none';
+            document.getElementById('timeSuggestion').innerHTML = '';
+        }
+
+        function addBalance() {
+            if (!selectedUser && !clonedCard) {
+                addLog('Selecione um usuário ou cartão clonado para adicionar saldo.', 'error');
+                return;
+            }
+            
+            const userToAddBalance = clonedCard || selectedUser;
+            
+            userToAddBalance.balance += 20.00;
+            
+            if (clonedCard) {
+                const originalUser = systemData.users.find(u => u.uid === clonedCard.originalUid);
+                if (originalUser) {
+                    originalUser.balance = userToAddBalance.balance;
+                }
+            }
+            
+            addLog(`Saldo de R$ 20,00 adicionado para ${userToAddBalance.name || userToAddBalance.userName}. Novo saldo: R$ ${userToAddBalance.balance.toFixed(2)}`, 'success');
+            renderUserList();
+            updateUserSelect();
+            
+            if (selectedUser) {
+                highlightSelectedUser(selectedUser.id);
+            } else if (clonedCard) {
+                highlightSelectedUser(`clone_${clonedCard.id}`);
+            }
+            
+            updateJSONEditor();
+        }
+
+        function refreshData() {
+            addLog('Dados atualizados do servidor.', 'success');
+            updateStatistics();
+        }
+
+        function clearLogs() {
+            accessLogs = [];
+            document.getElementById('accessLogs').innerHTML = 
+                '<div class="log-entry"><span class="log-time">[' + 
+                new Date().toLocaleTimeString() + 
+                ']</span> <span class="log-success">Logs limpos. Sistema operacional.</span></div>';
+            updateStatistics();
+        }
+
+        function updateJSONEditor() {
+            document.getElementById('jsonData').value = JSON.stringify(systemData, null, 2);
+        }
+
+        function loadJSON() {
+            try {
+                const jsonText = document.getElementById('jsonData').value;
+                const newData = JSON.parse(jsonText);
+                
+                if (!newData.users || !Array.isArray(newData.users)) {
+                    throw new Error('Estrutura JSON inválida: campo "users" não encontrado ou não é um array');
+                }
+                
+                if (!newData.locations || !Array.isArray(newData.locations)) {
+                    throw new Error('Estrutura JSON inválida: campo "locations" não encontrado ou não é um array');
+                }
+                
+                if (!newData.settings || typeof newData.settings !== 'object') {
+                    throw new Error('Estrutura JSON inválida: campo "settings" não encontrado ou não é um objeto');
+                }
+                
+                systemData = newData;
+                initializeApp();
+                addLog('Dados JSON carregados com sucesso.', 'success');
+            } catch (error) {
+                addLog(`Erro ao carregar JSON: ${error.message}`, 'error');
+                alert(`Erro ao carregar JSON: ${error.message}`);
+            }
+        }
+
+        function resetJSON() {
+            systemData = JSON.parse(JSON.stringify(initialData));
+            initializeApp();
+            updateJSONEditor();
+            addLog('Dados resetados para os valores iniciais.', 'success');
+        }
+
+        function exportJSON() {
+            const dataStr = JSON.stringify(systemData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'sistema-catraca-rfid.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            addLog('Dados exportados para arquivo JSON.', 'success');
+        }
+
+        function renderUserList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+
+            systemData.users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.dataset.userId = user.id;
+                
+                const lastUseInfo = user.lastUse ? 
+                    `<div class="user-details">Último uso: ${user.lastLocation} (${new Date(user.lastUse).toLocaleTimeString()})</div>` : 
+                    '<div class="user-details">Nenhum uso registrado</div>';
+                
+                userItem.innerHTML = `
+                    <div class="user-info">
+                        <div class="user-name">${user.name} <span class="status-indicator ${user.status === 'active' ? 'status-active' : 'status-blocked'}"></span></div>
+                        <div class="user-details">UID: ${user.uid} | PIN: ${user.pin} | Tipo: ${getCardTypeName(user.cardType)}</div>
+                        ${lastUseInfo}
+                        <div class="user-actions">
+                            <button class="action-btn btn-danger" onclick="deleteCard(${user.id}, 'user')">Deletar</button>
+                        </div>
+                    </div>
+                    <div class="user-balance">R$ ${user.balance.toFixed(2)}</div>
+                `;
+
+                userItem.addEventListener('click', function() {
+                    selectedUser = user;
+                    clonedCard = null;
+                    document.getElementById('selectedUser').value = user.id;
+                    highlightSelectedUser(user.id);
+                    updateCloneInfo();
+                    updateUsageHistory();
+                    updateDebugInfo();
+                });
+
+                userList.appendChild(userItem);
+            });
+
+            systemData.clonedCards.forEach(clone => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.dataset.userId = `clone_${clone.id}`;
+                userItem.style.backgroundColor = '#fff3cd';
+                
+                const lastUseInfo = clone.lastUse ? 
+                    `<div class="user-details">Último uso: ${clone.lastLocation} (${new Date(clone.lastUse).toLocaleTimeString()})</div>` : 
+                    '<div class="user-details">Nenhum uso registrado</div>';
+                
+                userItem.innerHTML = `
+                    <div class="user-info">
+                        <div class="user-name">${clone.userName} <span class="clone-badge">CLONE PERMANENTE</span> <span class="status-indicator ${clone.status === 'active' ? 'status-active' : 'status-blocked'}"></span></div>
+                        <div class="user-details">UID: ${clone.uid} | PIN: ${clone.pin} | Original: ${clone.originalUid}</div>
+                        ${lastUseInfo}
+                        <div class="user-actions">
+                            <button class="action-btn btn-danger" onclick="deleteCard(${clone.id}, 'clone')">Deletar</button>
+                        </div>
+                    </div>
+                    <div class="user-balance">R$ ${clone.balance.toFixed(2)}</div>
+                `;
+
+                userItem.addEventListener('click', function() {
+                    clonedCard = clone;
+                    selectedUser = null;
+                    document.getElementById('selectedUser').value = `clone_${clone.id}`;
+                    highlightSelectedUser(`clone_${clone.id}`);
+                    updateCloneInfo();
+                    updateUsageHistory();
+                    updateDebugInfo();
+                });
+
+                userList.appendChild(userItem);
+            });
+        }
+
+        function deleteCard(id, type) {
+            if (type === 'user') {
+                const userIndex = systemData.users.findIndex(u => u.id === id);
+                if (userIndex !== -1) {
+                    const userName = systemData.users[userIndex].name;
+                    systemData.users.splice(userIndex, 1);
+                    addLog(`Usuário ${userName} deletado do sistema.`, 'success');
+                }
+            } else if (type === 'clone') {
+                const cloneIndex = systemData.clonedCards.findIndex(c => c.id === id);
+                if (cloneIndex !== -1) {
+                    const cloneUid = systemData.clonedCards[cloneIndex].uid;
+                    systemData.clonedCards.splice(cloneIndex, 1);
+                    addLog(`Cartão clonado ${cloneUid} deletado do sistema.`, 'success');
+                }
+            }
+            
+            selectedUser = null;
+            clonedCard = null;
+            document.getElementById('selectedUser').value = '';
+            
+            renderUserList();
+            updateUserSelect();
+            updateStatistics();
+            updateCloneInfo();
+            updateUsageHistory();
+            updateDebugInfo();
+            updateJSONEditor();
+        }
+
+        function getCardTypeName(cardType) {
+            const types = {
+                'normal': 'Normal',
+                'student': 'Estudante',
+                'elderly': 'Idoso'
+            };
+            return types[cardType] || cardType;
+        }
+
+        function highlightSelectedUser(userId) {
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const selectedItem = document.querySelector(`.user-item[data-user-id="${userId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('active');
+            }
+        }
+
+        function updateUserSelect() {
+            const userSelect = document.getElementById('selectedUser');
+            userSelect.innerHTML = '<option value="">Selecione um usuário</option>';
+            
+            systemData.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.uid})`;
+                userSelect.appendChild(option);
+            });
+            
+            systemData.clonedCards.forEach(clone => {
+                const option = document.createElement('option');
+                option.value = `clone_${clone.id}`;
+                option.textContent = `${clone.userName} (${clone.uid} [CLONE])`;
+                userSelect.appendChild(option);
+            });
+        }
+
+        function updatePointsGrid() {
+            const pointsGrid = document.getElementById('pointsGrid');
+            pointsGrid.innerHTML = '';
+            
+            systemData.locations.forEach(location => {
+                const pointBtn = document.createElement('button');
+                pointBtn.className = 'point-btn';
+                pointBtn.textContent = location.name;
+                pointBtn.dataset.locationId = location.id;
+                
+                pointBtn.addEventListener('click', function() {
+                    document.querySelectorAll('.point-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    this.classList.add('active');
+                    selectedPoint = location.id;
+                    
+                    calculateAndDisplayDistance();
+                });
+                
+                pointsGrid.appendChild(pointBtn);
+            });
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalUsers').textContent = systemData.users.length;
+            document.getElementById('tripsToday').textContent = accessLogs.filter(log => 
+                log.type === 'access_granted' && isToday(log.timestamp)
+            ).length;
+            document.getElementById('securityAlerts').textContent = accessLogs.filter(log => 
+                log.type === 'security_alert'
+            ).length;
+            document.getElementById('blockedCards').textContent = systemData.users.filter(user => 
+                user.status === 'blocked'
+            ).length + systemData.clonedCards.filter(clone => clone.status === 'blocked').length;
+            document.getElementById('cloneSimulations').textContent = systemData.systemStats.cloneSimulations || 0;
+        }
+
+        function updateCloneInfo() {
+            const cloneInfo = document.getElementById('cloneInfo');
+            
+            if (simulationMode === 'clone') {
+                cloneInfo.style.display = 'block';
+            } else {
+                cloneInfo.style.display = 'none';
+            }
+        }
+
+        function isToday(timestamp) {
+            if (!timestamp) return false;
+            const today = new Date().toDateString();
+            const logDate = new Date(timestamp).toDateString();
+            return today === logDate;
+        }
+
+        function addLog(message, type) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            let typeClass = 'log-success';
+            if (type === 'error') typeClass = 'log-error';
+            if (type === 'warning') typeClass = 'log-warning';
+            
+            logEntry.innerHTML = `
+                <span class="log-time">[${timestamp}]</span> 
+                <span class="${typeClass}">${message}</span>
+            `;
+            
+            document.getElementById('accessLogs').prepend(logEntry);
+            
+            const logsContainer = document.getElementById('accessLogs');
+            if (logsContainer.children.length > 50) {
+                logsContainer.removeChild(logsContainer.lastChild);
+            }
+            
+            accessLogs.unshift({
+                timestamp: new Date(),
+                message: message,
+                type: type
+            });
+            
+            updateStatistics();
+        }
+    </script>
+</body>
+</html>
