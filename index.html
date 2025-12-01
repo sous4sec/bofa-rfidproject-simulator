@@ -76,9 +76,10 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
+        /* ALTERAÇÃO PRINCIPAL: Removendo o scroll da lista de usuários */
         .user-list {
-            max-height: 400px;
-            overflow-y: auto;
+            /* Removido: max-height: 400px; overflow-y: auto; */
+            /* A lista agora se expandirá conforme necessário */
         }
 
         .user-item {
@@ -1434,8 +1435,6 @@
             document.getElementById('securityAlert').style.display = 'none';
             addLog('Verificação de PIN cancelada. Acesso negado.', 'warning');
         }
-
-        // ... (outras funções permanecem iguais: cloneCard, resetCard, addBalance, etc.)
 
         function cloneCard() {
             if (!selectedUser) {
