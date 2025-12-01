@@ -5,7 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Catraca RFID - Simulação de Clonagem</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ESTILO GERAL */
+        :root {
+            --primary-color: #2049ff;
+            --primary-light: #4d6eff;
+            --primary-dark: #1a0d72;
+            --accent-color: #20ff49;
+            --text-light: #f0f0f0;
+            --text-dark: #121212;
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(18, 18, 24, 0.7);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --success: #20ff49;
+            --warning: #ffcc00;
+            --danger: #ff2040;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --transition: all 0.3s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,40 +36,108 @@
         }
 
         body {
-            background-color: #f5f7fa;
-            color: #333;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
             line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background com grade animada */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(10, 10, 15, 0.95), rgba(10, 10, 15, 0.95)),
+                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(32, 73, 255, 0.03) 50px, rgba(32, 73, 255, 0.03) 51px),
+                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(32, 73, 255, 0.03) 50px, rgba(32, 73, 255, 0.03) 51px);
+            z-index: -2;
+        }
+
+        /* Efeito de partículas luminosas */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--primary-color);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.1;
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+                opacity: 0;
+            }
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
         }
 
         header {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        header:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-5px);
         }
 
         h1 {
             font-size: 2.2rem;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            background: linear-gradient(to right, var(--text-light), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .subtitle {
             font-size: 1.1rem;
-            opacity: 0.9;
+            color: var(--text-light);
+            opacity: 0.8;
         }
 
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 24px;
         }
 
         @media (max-width: 1100px) {
@@ -57,176 +147,221 @@
         }
 
         .card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
         }
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
         }
 
         .card h2 {
-            color: #2a5298;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            color: var(--text-light);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* ALTERAÇÃO PRINCIPAL: Removendo o scroll da lista de usuários */
+        .card h2 i {
+            color: var(--primary-color);
+        }
+
         .user-list {
-            /* Removido: max-height: 400px; overflow-y: auto; */
-            /* A lista agora se expandirá conforme necessário */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
         .user-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: var(--transition);
         }
 
         .user-item:hover {
-            background-color: #f9f9f9;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--glass-border);
         }
 
         .user-item.active {
-            background-color: #e6f0ff;
-            border-left: 4px solid #2a5298;
+            background: rgba(32, 73, 255, 0.15);
+            border-color: var(--primary-color);
         }
 
         .user-info {
             display: flex;
             flex-direction: column;
+            gap: 4px;
         }
 
         .user-name {
             font-weight: 600;
             font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .user-details {
             font-size: 0.9rem;
-            color: #666;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .user-balance {
             font-weight: bold;
             font-size: 1.2rem;
+            color: var(--primary-light);
         }
 
         .controls {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         .control-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 10px;
         }
 
         button {
-            padding: 10px 15px;
+            padding: 12px 18px;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s ease;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 1px solid var(--glass-border);
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
         }
 
         .btn-primary {
-            background-color: #2a5298;
-            color: white;
+            background: var(--primary-color);
+            border-color: var(--primary-color);
         }
 
         .btn-primary:hover {
-            background-color: #1e3c72;
+            background: var(--primary-light);
         }
 
         .btn-secondary {
-            background-color: #6c757d;
-            color: white;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .btn-secondary:hover {
-            background-color: #5a6268;
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .btn-danger {
-            background-color: #dc3545;
-            color: white;
+            background: var(--danger);
+            border-color: var(--danger);
         }
 
         .btn-danger:hover {
-            background-color: #c82333;
+            background: #ff4060;
         }
 
         .btn-success {
-            background-color: #28a745;
-            color: white;
+            background: var(--success);
+            border-color: var(--success);
         }
 
         .btn-success:hover {
-            background-color: #218838;
+            background: #40ff60;
         }
 
         .btn-warning {
-            background-color: #ffc107;
-            color: #212529;
+            background: var(--warning);
+            border-color: var(--warning);
+            color: var(--primary-dark);
         }
 
         .btn-warning:hover {
-            background-color: #e0a800;
+            background: #ffd740;
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         label {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 600;
-            color: #555;
+            color: var(--text-light);
+            opacity: 0.9;
         }
 
         input, select {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
             font-size: 1rem;
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .simulation-area {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         .rfid-reader {
-            background-color: #2a5298;
+            background: var(--primary-color);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 24px;
+            border-radius: var(--radius-lg);
             text-align: center;
             font-size: 1.2rem;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--primary-light);
         }
 
         .rfid-reader:hover {
-            background-color: #1e3c72;
+            background: var(--primary-light);
             transform: scale(1.02);
         }
 
@@ -235,20 +370,24 @@
         }
 
         .clone-simulation {
-            background-color: #fff3cd;
-            border: 2px solid #ffc107;
-            color: #856404;
-            padding: 20px;
-            border-radius: 10px;
+            background: rgba(255, 204, 0, 0.2);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            padding: 24px;
+            border-radius: var(--radius-lg);
             text-align: center;
             font-size: 1.2rem;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
         }
 
         .clone-simulation:hover {
-            background-color: #ffeaa7;
+            background: rgba(255, 204, 0, 0.3);
             transform: scale(1.02);
         }
 
@@ -257,54 +396,56 @@
         }
 
         @keyframes pulse {
-            0% { background-color: #2a5298; }
-            50% { background-color: #3a62a8; }
-            100% { background-color: #2a5298; }
+            0% { background-color: var(--primary-color); }
+            50% { background-color: var(--primary-light); }
+            100% { background-color: var(--primary-color); }
         }
 
         @keyframes pulse-warning {
-            0% { background-color: #fff3cd; }
-            50% { background-color: #ffeaa7; }
-            100% { background-color: #fff3cd; }
+            0% { background-color: rgba(255, 204, 0, 0.2); }
+            50% { background-color: rgba(255, 204, 0, 0.4); }
+            100% { background-color: rgba(255, 204, 0, 0.2); }
         }
 
         .logs {
             max-height: 300px;
             overflow-y: auto;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            padding: 16px;
             font-family: monospace;
             font-size: 0.9rem;
+            border: 1px solid var(--glass-border);
         }
 
         .log-entry {
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .log-time {
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.6);
             font-weight: bold;
         }
 
         .log-success {
-            color: #28a745;
+            color: var(--success);
         }
 
         .log-warning {
-            color: #ffc107;
+            color: var(--warning);
         }
 
         .log-error {
-            color: #dc3545;
+            color: var(--danger);
         }
 
         .map-container {
             height: 400px;
-            border-radius: 10px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
+            border: 1px solid var(--glass-border);
         }
 
         .pin-modal {
@@ -314,7 +455,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.7);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -325,52 +466,57 @@
         }
 
         .pin-content {
-            background-color: white;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
             padding: 30px;
-            border-radius: 10px;
+            border-radius: var(--radius-lg);
             width: 90%;
             max-width: 400px;
             text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .pinpad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 12px;
             margin: 20px 0;
         }
 
         .pinpad-btn {
-            padding: 15px;
+            padding: 16px;
             font-size: 1.2rem;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: var(--transition);
+            color: var(--text-light);
         }
 
         .pinpad-btn:hover {
-            background-color: #e9ecef;
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .pin-display {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 15px 0;
+            gap: 12px;
+            margin: 20px 0;
         }
 
         .pin-dot {
-            width: 15px;
-            height: 15px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background-color: #ddd;
-            transition: background-color 0.2s;
+            background-color: var(--glass-border);
+            transition: var(--transition);
         }
 
         .pin-dot.filled {
-            background-color: #2a5298;
+            background-color: var(--primary-color);
         }
 
         .status-indicator {
@@ -382,130 +528,139 @@
         }
 
         .status-active {
-            background-color: #28a745;
+            background-color: var(--success);
         }
 
         .status-blocked {
-            background-color: #dc3545;
+            background-color: var(--danger);
         }
 
         .status-warning {
-            background-color: #ffc107;
+            background-color: var(--warning);
         }
 
         .alert {
-            padding: 15px;
-            border-radius: 5px;
+            padding: 16px;
+            border-radius: var(--radius-md);
             margin-bottom: 20px;
+            border: 1px solid;
         }
 
         .alert-warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
+            background: rgba(255, 204, 0, 0.1);
+            border-color: var(--warning);
+            color: var(--warning);
         }
 
         .alert-danger {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: rgba(255, 32, 64, 0.1);
+            border-color: var(--danger);
+            color: var(--danger);
         }
 
         .alert-success {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: rgba(32, 255, 73, 0.1);
+            border-color: var(--success);
+            color: var(--success);
         }
 
         .json-editor {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
             font-family: monospace;
             font-size: 0.85rem;
             height: 200px;
             width: 100%;
             resize: vertical;
+            color: var(--text-light);
         }
 
         .tabs {
             display: flex;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .tab {
-            padding: 10px 20px;
+            padding: 12px 20px;
             cursor: pointer;
             border-bottom: 3px solid transparent;
+            transition: var(--transition);
         }
 
         .tab.active {
-            border-bottom: 3px solid #2a5298;
+            border-bottom: 3px solid var(--primary-color);
             font-weight: bold;
-            color: #2a5298;
+            color: var(--primary-color);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .clone-info {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 15px;
+            background: rgba(255, 204, 0, 0.1);
+            border: 1px solid var(--warning);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-bottom: 20px;
+            color: var(--warning);
         }
 
         .distance-info {
             font-size: 0.9rem;
-            color: #666;
+            color: rgba(255, 255, 255, 0.7);
             margin-top: 5px;
         }
 
         .user-actions {
             display: flex;
-            gap: 5px;
-            margin-top: 5px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .action-btn {
-            padding: 3px 8px;
+            padding: 6px 12px;
             font-size: 0.8rem;
-            border-radius: 3px;
+            border-radius: var(--radius-sm);
         }
 
         .points-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
         }
 
         .point-btn {
-            padding: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s;
+            transition: var(--transition);
+            color: var(--text-light);
         }
 
         .point-btn:hover {
-            background-color: #e9ecef;
-            border-color: #2a5298;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--primary-color);
         }
 
         .point-btn.active {
-            background-color: #2a5298;
+            background: var(--primary-color);
             color: white;
-            border-color: #1e3c72;
+            border-color: var(--primary-light);
         }
 
         .time-controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         .time-input {
@@ -515,38 +670,39 @@
 
         .time-suggestion {
             font-size: 0.85rem;
-            color: #666;
-            margin-top: 5px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 8px;
         }
 
         .time-suggestion button {
-            padding: 3px 8px;
+            padding: 6px 12px;
             font-size: 0.8rem;
-            margin-left: 5px;
+            margin-left: 8px;
         }
 
         .distance-display {
-            background-color: #e9ecef;
-            padding: 8px 12px;
-            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 12px;
+            border-radius: var(--radius-sm);
             font-size: 0.9rem;
-            margin-top: 5px;
+            margin-top: 8px;
+            border: 1px solid var(--glass-border);
         }
 
         .usage-history {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-top: 12px;
             font-size: 0.85rem;
         }
 
         .history-item {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid #e9ecef;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .history-item:last-child {
@@ -554,72 +710,102 @@
         }
 
         .debug-info {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-top: 12px;
             font-size: 0.8rem;
             font-family: monospace;
         }
 
         .clone-badge {
-            background-color: #ffc107;
-            color: #856404;
-            padding: 2px 6px;
-            border-radius: 3px;
+            background: var(--warning);
+            color: var(--primary-dark);
+            padding: 3px 8px;
+            border-radius: 4px;
             font-size: 0.7rem;
             font-weight: bold;
-            margin-left: 5px;
+            margin-left: 8px;
         }
 
         .simulation-mode {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .mode-btn {
             flex: 1;
-            padding: 12px;
+            padding: 16px;
             text-align: center;
-            background-color: #f8f9fa;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
         }
 
         .mode-btn.active {
-            background-color: #2a5298;
+            background: var(--primary-color);
             color: white;
-            border-color: #1e3c72;
+            border-color: var(--primary-light);
         }
 
         .mode-btn.clone-mode {
-            background-color: #fff3cd;
-            border-color: #ffc107;
+            background: rgba(255, 204, 0, 0.1);
+            border-color: var(--warning);
         }
 
         .mode-btn.clone-mode.active {
-            background-color: #ffc107;
-            color: #212529;
-            border-color: #e0a800;
+            background: var(--warning);
+            color: var(--primary-dark);
+            border-color: #ffd740;
+        }
+
+        .icon-lg {
+            font-size: 1.5rem;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
         }
     </style>
 </head>
 <body>
+    <!-- Efeito de partículas -->
+    <div class="particles" id="particles"></div>
+
     <div class="container">
         <header>
-            <h1>Sistema de Catraca RFID - Simulação de Clonagem</h1>
-            <p class="subtitle">Sistema com simulação rápida de uso com cartão clonado</p>
+            <h1><i class="fas fa-id-card-alt"></i> Sistema de Catraca RFID</h1>
+            <p class="subtitle">Simulação de segurança e detecção de clonagem</p>
         </header>
 
         <div class="dashboard">
             <!-- Painel de Usuários -->
             <div class="card">
-                <h2>Usuários do Sistema</h2>
+                <h2><i class="fas fa-users"></i> Usuários do Sistema</h2>
                 <div class="user-list" id="userList">
                     <!-- Usuários serão carregados aqui -->
                 </div>
@@ -627,38 +813,44 @@
 
             <!-- Painel de Controle -->
             <div class="card">
-                <h2>Controles de Simulação</h2>
+                <h2><i class="fas fa-sliders-h"></i> Controles de Simulação</h2>
                 <div class="controls">
                     <div class="input-group">
-                        <label for="selectedUser">Usuário/Cartão Selecionado:</label>
+                        <label for="selectedUser"><i class="fas fa-user-check"></i> Usuário/Cartão Selecionado:</label>
                         <select id="selectedUser">
                             <option value="">Selecione um usuário</option>
                         </select>
                     </div>
 
                     <div class="control-group">
-                        <button id="btnCloneCard" class="btn-secondary">Criar Clone Permanente</button>
-                        <button id="btnResetCard" class="btn-secondary">Resetar Histórico</button>
-                        <button id="btnAddBalance" class="btn-success">Adicionar Saldo</button>
+                        <button id="btnCloneCard" class="btn-secondary"><i class="fas fa-copy"></i> Criar Clone Permanente</button>
+                        <button id="btnResetCard" class="btn-secondary"><i class="fas fa-redo"></i> Resetar Histórico</button>
+                        <button id="btnAddBalance" class="btn-success"><i class="fas fa-plus-circle"></i> Adicionar Saldo</button>
                     </div>
 
                     <div class="simulation-mode">
-                        <button class="mode-btn active" data-mode="normal">Modo Normal</button>
-                        <button class="mode-btn clone-mode" data-mode="clone">Modo Clonagem</button>
+                        <button class="mode-btn active" data-mode="normal">
+                            <i class="fas fa-id-card icon-lg"></i>
+                            Modo Normal
+                        </button>
+                        <button class="mode-btn clone-mode" data-mode="clone">
+                            <i class="fas fa-clone icon-lg"></i>
+                            Modo Clonagem
+                        </button>
                     </div>
 
                     <div class="input-group">
-                        <label>Selecionar Ponto de Parada:</label>
+                        <label><i class="fas fa-map-marker-alt"></i> Selecionar Ponto de Parada:</label>
                         <div class="points-grid" id="pointsGrid">
                             <!-- Pontos serão carregados aqui -->
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label for="timeBetweenUses">Tempo desde último uso (minutos):</label>
+                        <label for="timeBetweenUses"><i class="fas fa-clock"></i> Tempo desde último uso (minutos):</label>
                         <div class="time-controls">
                             <input type="number" id="timeBetweenUses" class="time-input" min="0" max="120" value="5">
-                            <button id="btnSetTime" class="btn-primary">Definir Tempo</button>
+                            <button id="btnSetTime" class="btn-primary"><i class="fas fa-check"></i> Definir Tempo</button>
                         </div>
                         <div class="time-suggestion" id="timeSuggestion">
                             <!-- Sugestão de tempo será exibida aqui -->
@@ -669,33 +861,35 @@
                     </div>
 
                     <div class="usage-history" id="usageHistory" style="display: none;">
-                        <strong>Histórico de Uso:</strong>
+                        <strong><i class="fas fa-history"></i> Histórico de Uso:</strong>
                         <div id="historyList">
                             <!-- Histórico será exibido aqui -->
                         </div>
                     </div>
 
                     <div class="debug-info" id="debugInfo" style="display: none;">
-                        <strong>Informações de Debug:</strong>
+                        <strong><i class="fas fa-bug"></i> Informações de Debug:</strong>
                         <div id="debugDetails"></div>
                     </div>
 
                     <div class="clone-info" id="cloneInfo" style="display: none;">
-                        <strong>Modo Clonagem Ativo:</strong> 
+                        <strong><i class="fas fa-exclamation-triangle"></i> Modo Clonagem Ativo:</strong> 
                         <span id="cloneDetails">Simulando uso com cartão clonado (mesmo UID)</span>
                     </div>
 
                     <div class="simulation-area">
                         <div class="rfid-reader" id="rfidReader">
-                            🚌 USO NORMAL - APROXIME O CARTÃO 🚌
+                            <i class="fas fa-id-card icon-lg"></i>
+                            USO NORMAL - APROXIME O CARTÃO
                         </div>
                         <div class="clone-simulation" id="cloneSimulation" style="display: none;">
-                            ⚠️ SIMULAR USO COM CARTAÃO CLONADO ⚠️
+                            <i class="fas fa-clone icon-lg"></i>
+                            SIMULAR USO COM CARTAÃO CLONADO
                         </div>
                     </div>
 
                     <div class="alert alert-warning" id="securityAlert" style="display: none;">
-                        <strong>Alerta de Segurança:</strong> Uso suspeito detectado! Verificação de PIN necessária.
+                        <strong><i class="fas fa-shield-alt"></i> Alerta de Segurança:</strong> Uso suspeito detectado! Verificação de PIN necessária.
                     </div>
 
                     <div class="logs" id="accessLogs">
@@ -709,15 +903,15 @@
 
             <!-- Painel de Mapa -->
             <div class="card" style="grid-column: 1 / -1;">
-                <h2>Mapa de Pontos de Parada</h2>
+                <h2><i class="fas fa-map"></i> Mapa de Pontos de Parada</h2>
                 <div class="map-container" id="map"></div>
             </div>
 
             <!-- Painel de Status e JSON -->
             <div class="card">
                 <div class="tabs">
-                    <div class="tab active" data-tab="status">Status do Sistema</div>
-                    <div class="tab" data-tab="json">Editor JSON</div>
+                    <div class="tab active" data-tab="status"><i class="fas fa-info-circle"></i> Status do Sistema</div>
+                    <div class="tab" data-tab="json"><i class="fas fa-code"></i> Editor JSON</div>
                 </div>
                 
                 <div id="statusTab">
@@ -727,33 +921,33 @@
                         <p><span class="status-indicator status-active"></span> Simulação de Clonagem Disponível</p>
                     </div>
                     <div class="control-group" style="margin-top: 20px;">
-                        <button id="btnRefreshData" class="btn-primary">Atualizar Dados</button>
-                        <button id="btnClearLogs" class="btn-secondary">Limpar Logs</button>
-                        <button id="btnExportJSON" class="btn-success">Exportar JSON</button>
+                        <button id="btnRefreshData" class="btn-primary"><i class="fas fa-sync"></i> Atualizar Dados</button>
+                        <button id="btnClearLogs" class="btn-secondary"><i class="fas fa-trash"></i> Limpar Logs</button>
+                        <button id="btnExportJSON" class="btn-success"><i class="fas fa-download"></i> Exportar JSON</button>
                     </div>
                 </div>
                 
                 <div id="jsonTab" style="display: none;">
                     <div class="input-group">
-                        <label for="jsonData">Dados do Sistema (JSON):</label>
+                        <label for="jsonData"><i class="fas fa-file-code"></i> Dados do Sistema (JSON):</label>
                         <textarea id="jsonData" class="json-editor"></textarea>
                     </div>
                     <div class="control-group">
-                        <button id="btnLoadJSON" class="btn-primary">Carregar JSON</button>
-                        <button id="btnResetJSON" class="btn-secondary">Resetar Dados</button>
+                        <button id="btnLoadJSON" class="btn-primary"><i class="fas fa-upload"></i> Carregar JSON</button>
+                        <button id="btnResetJSON" class="btn-secondary"><i class="fas fa-undo"></i> Resetar Dados</button>
                     </div>
                 </div>
             </div>
 
             <!-- Painel de Estatísticas -->
             <div class="card">
-                <h2>Estatísticas de Uso</h2>
+                <h2><i class="fas fa-chart-bar"></i> Estatísticas de Uso</h2>
                 <div id="usageStats">
-                    <p>Total de Usuários: <strong id="totalUsers">0</strong></p>
-                    <p>Viagens Hoje: <strong id="tripsToday">0</strong></p>
-                    <p>Alertas de Segurança: <strong id="securityAlerts">0</strong></p>
-                    <p>Cartões Bloqueados: <strong id="blockedCards">0</strong></p>
-                    <p>Simulações de Clonagem: <strong id="cloneSimulations">0</strong></p>
+                    <p><i class="fas fa-users"></i> Total de Usuários: <strong id="totalUsers">0</strong></p>
+                    <p><i class="fas fa-bus"></i> Viagens Hoje: <strong id="tripsToday">0</strong></p>
+                    <p><i class="fas fa-shield-alt"></i> Alertas de Segurança: <strong id="securityAlerts">0</strong></p>
+                    <p><i class="fas fa-ban"></i> Cartões Bloqueados: <strong id="blockedCards">0</strong></p>
+                    <p><i class="fas fa-clone"></i> Simulações de Clonagem: <strong id="cloneSimulations">0</strong></p>
                 </div>
             </div>
         </div>
@@ -762,7 +956,7 @@
     <!-- Modal para entrada de PIN -->
     <div class="pin-modal" id="pinModal">
         <div class="pin-content">
-            <h2>Verificação de Segurança</h2>
+            <h2><i class="fas fa-lock"></i> Verificação de Segurança</h2>
             <p id="pinMessage">Uso suspeito detectado. Por favor, insira seu PIN de 4 dígitos:</p>
             
             <div class="pin-display">
@@ -784,14 +978,14 @@
                 <button class="pinpad-btn" data-digit="9">9</button>
                 <button class="pinpad-btn" id="btnClearPin">C</button>
                 <button class="pinpad-btn" data-digit="0">0</button>
-                <button class="pinpad-btn" id="btnBackspace">⌫</button>
+                <button class="pinpad-btn" id="btnBackspace"><i class="fas fa-backspace"></i></button>
             </div>
             
             <div class="control-group">
-                <button id="btnSubmitPin" class="btn-primary">Verificar</button>
-                <button id="btnCancelPin" class="btn-secondary">Cancelar</button>
+                <button id="btnSubmitPin" class="btn-primary"><i class="fas fa-check"></i> Verificar</button>
+                <button id="btnCancelPin" class="btn-secondary"><i class="fas fa-times"></i> Cancelar</button>
             </div>
-            <p id="pinError" style="color: #dc3545; margin-top: 10px; display: none;">PIN incorreto. Tente novamente.</p>
+            <p id="pinError" style="color: var(--danger); margin-top: 10px; display: none;"><i class="fas fa-exclamation-circle"></i> PIN incorreto. Tente novamente.</p>
         </div>
     </div>
 
@@ -912,6 +1106,32 @@
             setupEventListeners();
             updateJSONEditor();
         });
+
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 25;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Tamanho aleatório
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Posição inicial aleatória
+                particle.style.left = `${Math.random() * 100}vw`;
+                
+                // Atraso aleatório na animação
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+                
+                // Opacidade aleatória
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
 
         function initializeApp() {
             renderUserList();
@@ -1051,12 +1271,12 @@
 
             // Atualiza visibilidade dos leitores
             if (simulationMode === 'normal') {
-                rfidReader.style.display = 'block';
+                rfidReader.style.display = 'flex';
                 cloneSimulation.style.display = 'none';
                 cloneInfo.style.display = 'none';
             } else {
                 rfidReader.style.display = 'none';
-                cloneSimulation.style.display = 'block';
+                cloneSimulation.style.display = 'flex';
                 cloneInfo.style.display = 'block';
             }
         }
@@ -1607,7 +1827,7 @@
                         <div class="user-details">UID: ${user.uid} | PIN: ${user.pin} | Tipo: ${getCardTypeName(user.cardType)}</div>
                         ${lastUseInfo}
                         <div class="user-actions">
-                            <button class="action-btn btn-danger" onclick="deleteCard(${user.id}, 'user')">Deletar</button>
+                            <button class="action-btn btn-danger" onclick="deleteCard(${user.id}, 'user')"><i class="fas fa-trash"></i> Deletar</button>
                         </div>
                     </div>
                     <div class="user-balance">R$ ${user.balance.toFixed(2)}</div>
@@ -1630,7 +1850,7 @@
                 const userItem = document.createElement('div');
                 userItem.className = 'user-item';
                 userItem.dataset.userId = `clone_${clone.id}`;
-                userItem.style.backgroundColor = '#fff3cd';
+                userItem.style.backgroundColor = 'rgba(255, 204, 0, 0.1)';
                 
                 const lastUseInfo = clone.lastUse ? 
                     `<div class="user-details">Último uso: ${clone.lastLocation} (${new Date(clone.lastUse).toLocaleTimeString()})</div>` : 
@@ -1642,7 +1862,7 @@
                         <div class="user-details">UID: ${clone.uid} | PIN: ${clone.pin} | Original: ${clone.originalUid}</div>
                         ${lastUseInfo}
                         <div class="user-actions">
-                            <button class="action-btn btn-danger" onclick="deleteCard(${clone.id}, 'clone')">Deletar</button>
+                            <button class="action-btn btn-danger" onclick="deleteCard(${clone.id}, 'clone')"><i class="fas fa-trash"></i> Deletar</button>
                         </div>
                     </div>
                     <div class="user-balance">R$ ${clone.balance.toFixed(2)}</div>
